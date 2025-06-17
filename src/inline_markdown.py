@@ -29,67 +29,39 @@ def extract_markdown_images(text):
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
-def split_nodes(old_nodes):
+def split_nodes(func, old_nodes, str_format):
     new_nodes = []
     for old_node in old_nodes:
         if old_node.text_type != TextType.TEXT:
             new_nodes.append(old_node)
             continue
-
-        matches = extract_markdown_images(old_node.text)
-
-
-def split_nodes_images(old_nodes):
-    new_nodes = []
-    for old_node in old_nodes:
-        if old_node.text_type != TextType.TEXT:
-            new_nodes.append(old_node)
-            continue
-
-        matches = extract_markdown_images(old_node.text)
-
-        if len(matches) == 0:
-            return old_nodes
 
         original_text = old_node.text
-        for match in matches:
-            sections = original_text.split(f"![{match[0]}]({match[1]})", 1)
-            if sections[0] != "":
-                new_nodes.append(TextNode(sections[0], TextType.TEXT))
-            new_nodes.append(TextNode(match[0], TextType.IMAGE, match[1]))
-            if sections[1] != "":
-                original_text = sections[1]
-            else:
-                original_text = ""
-        if len(original_text) > 0:
-            new_nodes.append(TextNode(original_text, TextType.TEXT))
-    return new_nodes
+        matches = func(original_text)
 
-def split_nodes_links(old_nodes):
-    new_nodes = []
-    for old_node in old_nodes:
-        if old_node.text_type != TextType.TEXT:
+        if len(matches) == 0:
             new_nodes.append(old_node)
             continue
         
-        matches = extract_markdown_links(old_node.text)
-        
-        if len(matches) == 0:
-            return old_nodes
-
-        original_text = old_node.text
         for match in matches:
-            sections = original_text.split(f"[{match[0]}]({match[1]})", 1)
+            regex_test = ""
+            if str_format == TextType.IMAGE:
+                regex_text = f"![{match[0]}]({match[1]})"
+            else:
+                regex_text = f"[{match[0]}]({match[1]})"
+            sections = original_text.split(regex_text, 1)
+            if len(sections) != 2:
+                raise ValueError(f"invalid markdown, {str_format} section not closed")
             if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.TEXT))
-                new_nodes.append(TextNode(match[0], TextType.LINK, match[1]))
-            else:
-                original_text = ""
-            if sections[1] != "":
-                original_text = sections[1]
-            else:
-                original_text = ""
-        if len(original_text) > 0:
+            new_nodes.append(TextNode(match[0], str_format, match[1]))
+            original_text = sections[1]
+        if original_text != "":
             new_nodes.append(TextNode(original_text, TextType.TEXT))
     return new_nodes
 
+def split_nodes_image(old_nodes):
+    return split_nodes(extract_markdown_images, old_nodes, TextType.IMAGE)
+
+def split_nodes_link(old_nodes):
+    return split_nodes(extract_markdown_links, old_nodes, TextType.LINK) 
