@@ -29,6 +29,16 @@ def extract_markdown_images(text):
 def extract_markdown_links(text):
     return re.findall(r"(?<!!)\[([^\[\]]*)\]\(([^\(\)]*)\)", text)
 
+def split_nodes(old_nodes):
+    new_nodes = []
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+
+        matches = extract_markdown_images(old_node.text)
+
+
 def split_nodes_images(old_nodes):
     new_nodes = []
     for old_node in old_nodes:
@@ -46,14 +56,16 @@ def split_nodes_images(old_nodes):
             sections = original_text.split(f"![{match[0]}]({match[1]})", 1)
             if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.TEXT))
-            new_nodes.append(TextNode(match[0], TextType.LINK, match[1]))
+            new_nodes.append(TextNode(match[0], TextType.IMAGE, match[1]))
             if sections[1] != "":
                 original_text = sections[1]
+            else:
+                original_text = ""
         if len(original_text) > 0:
             new_nodes.append(TextNode(original_text, TextType.TEXT))
     return new_nodes
 
-def split_nodes_link(old_nodes):
+def split_nodes_links(old_nodes):
     new_nodes = []
     for old_node in old_nodes:
         if old_node.text_type != TextType.TEXT:
@@ -70,15 +82,14 @@ def split_nodes_link(old_nodes):
             sections = original_text.split(f"[{match[0]}]({match[1]})", 1)
             if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.TEXT))
-            new_nodes.append(TextNode(match[0], TextType.LINK, match[1]))
+                new_nodes.append(TextNode(match[0], TextType.LINK, match[1]))
+            else:
+                original_text = ""
             if sections[1] != "":
-                original_text = sections[1] 
+                original_text = sections[1]
+            else:
+                original_text = ""
         if len(original_text) > 0:
             new_nodes.append(TextNode(original_text, TextType.TEXT))
     return new_nodes
 
-
-
-node = TextNode("This is text with a link [to boot dev](https://www.boot.dev) and [to youtube](https://www.youtube.com/@bootdotdev) yo dawg", TextType.TEXT,)
-new_nodes = split_nodes_link([node])
-print(new_nodes)
