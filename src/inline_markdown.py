@@ -64,4 +64,13 @@ def split_nodes_image(old_nodes):
     return split_nodes(extract_markdown_images, old_nodes, TextType.IMAGE)
 
 def split_nodes_link(old_nodes):
-    return split_nodes(extract_markdown_links, old_nodes, TextType.LINK) 
+    return split_nodes(extract_markdown_links, old_nodes, TextType.LINK)
+
+def text_to_textnodes(text):
+    if text == "":
+        raise ValueError("invalid text: text empty")
+
+
+
+
+
